@@ -22,11 +22,10 @@ package logic.soldier
 		public function KnightRobo(team:int, cell:int, startAnim:String) 
 		{
 			// Init sprite map
-			var sprKnightRobo:Spritemap = new Spritemap(KNIGHT_ROBO_IMG, 204, 187);
+			var sprKnightRobo:Spritemap = new Spritemap(KNIGHT_ROBO_IMG, 102, 94);
 			sprKnightRobo.add(ANIM_STAND, [0], 1, false);
 			sprKnightRobo.add(ANIM_WALK, [1, 2, 3, 4, 5, 6, 7, 8], 0.4, true);
 			sprKnightRobo.add(ANIM_ATTACK, [33, 34, 35, 36, 37, 38, 39, 40], 0.6, false);
-			sprKnightRobo.scale = 0.5;
 			if (team == Constants.TEAM_2) sprKnightRobo.setFlipped(true, KNIGHT_ROBO_IMG_FLIPPED);
 			graphic = sprKnightRobo;
 			
