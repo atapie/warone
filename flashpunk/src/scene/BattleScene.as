@@ -2,6 +2,8 @@ package scene
 {
 	import common.Constants;
 	import flash.display.BitmapData;
+	import flash.events.Event;
+	import flash.events.MouseEvent;
 	import flash.geom.Rectangle;
 	import logic.BattleLogic;
 	import logic.soldier.BaseSoldier;
@@ -12,6 +14,12 @@ package scene
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.utils.Draw;
 	import net.flashpunk.World;
+	import org.aswing.AbstractButton;
+	import org.aswing.FlowLayout;
+	import org.aswing.JButton;
+	import org.aswing.JFrame;
+	import org.aswing.JLabel;
+	import org.aswing.JPanel;
 	
 	/**
 	 * ...
@@ -24,12 +32,52 @@ package scene
 		private var enemyHp:Canvas = null;
 		private var groundGrid:Image = null;
 		
+		// AsWingGUI
+		private var closeDialog:JFrame;
+		
 		public function BattleScene() 
 		{
 			addAvatars();
 			addHpInfo();
 			addBattleGround();
 			addLogicEngities();
+			//initGUI();
+		}
+		
+		private function initGUI():void
+		{			
+			// create components
+			closeDialog = new JFrame(FP.engine, "Close Dialog");
+			var panel:JPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+			var label:JLabel = new JLabel("This is a dialog with one close button only");
+			var button:JButton = new JButton("                   Đóng                   ");
+			
+			// size the frame
+			closeDialog.setSizeWH(300, 150);
+			closeDialog.x = FP.halfWidth - closeDialog.width / 2;
+			closeDialog.y = FP.halfHeight - closeDialog.height;
+			
+			// frame config
+			closeDialog.setClosable(false);
+			closeDialog.setDragable(false);
+			closeDialog.setResizable(false);
+			
+			// button config
+			button.addEventListener(MouseEvent.CLICK, onCloseDialog);
+			
+			// add the label and button to the panel
+			panel.appendAll(label, button);
+			
+			// add the panel to the frame
+			closeDialog.getContentPane().append(panel);
+			
+			// display the frame
+			closeDialog.show();
+		}
+		
+		private function onCloseDialog(e:Event):void 
+		{
+			closeDialog.hide();
 		}
 		
 		override public function update():void

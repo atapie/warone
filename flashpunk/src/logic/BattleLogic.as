@@ -65,10 +65,10 @@ package logic
 		private function reset():void 
 		{
 			time = 0;
-			castleHealth[Constants.TEAM_1] = 5000;
-			castleHealth[Constants.TEAM_2] = 5000;
-			castleHealthOrigin[Constants.TEAM_1] = 5000;
-			castleHealthOrigin[Constants.TEAM_2] = 5000;
+			castleHealth[Constants.TEAM_1] = 1000;
+			castleHealth[Constants.TEAM_2] = 1000;
+			castleHealthOrigin[Constants.TEAM_1] = 1000;
+			castleHealthOrigin[Constants.TEAM_2] = 1000;
 		}
 		
 		public function addTroop(troop:BaseSoldier):void

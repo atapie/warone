@@ -19,6 +19,9 @@ package common
 		public var speed:int;
 		public var duration:Number;
 		public var alpha:NumTween;
+		public var maxFloat:int;
+		
+		private var startY:Number;
 
 		/**
 		 * Creates a floating text.
@@ -35,8 +38,11 @@ package common
 		 */
 		override public function update():void
 		{
-			title.alpha = alpha.value;
-			this.y -= speed * FP.elapsed;
+			title.alpha = alpha.value;			
+			if (maxFloat < 0 || (startY - y) < maxFloat)
+			{
+				this.y -= speed * FP.elapsed;
+			}
 		}
 
 		/**
@@ -54,18 +60,20 @@ package common
 		 * @param	text The number concatenated with a '+' in front.
 		 * @param	duration The time it takes to fade out.
 		 */
-		public function reset(x:Number, y:Number, text:String, color:uint, duration:Number = 0.6):void
+		public function reset(x:Number, y:Number, text:String, duration:Number = 0.6, color:uint = 0, size:int = 18, maxFloat:int = -1):void
 		{
 			title.text = String(text);
 			this.duration = duration;
+			this.maxFloat = maxFloat;
 			title.color = color;
-			title.size = 18;
+			title.size = size;
 			alpha = new NumTween(disappeared);
 			alpha.tween(1, 0, duration, Ease.cubeIn);
 			addTween(alpha);
 			graphic = title;
 			this.x = x - title.width / 2;
 			this.y = y - title.height / 2;
+			this.startY = this.y;
 		}
 	}
 }

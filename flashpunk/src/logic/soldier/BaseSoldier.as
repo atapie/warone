@@ -128,7 +128,7 @@ package logic.soldier
 				
 				if (enemy is BaseSoldier)
 				{
-					(world.create(FloatingText) as FloatingText).reset(enemy.x + Constants.CELL_SIZE / 2, enemy.y, ( -damage).toString(), 0xFF0000, 10);
+					(world.create(FloatingText) as FloatingText).reset(enemy.x + Constants.CELL_SIZE / 2, enemy.y, ( -damage).toString(), 10, 0xFF0000);
 					enemy.health -= damage;
 					if (enemy.health <= 0)
 					{
@@ -139,6 +139,13 @@ package logic.soldier
 				{
 					BattleLogic.instance().castleHealth[ -team] -= damage;
 					(world as BattleScene).updateHpInfo( -team, (BattleLogic.instance().castleHealth[ -team] * 100 / BattleLogic.instance().castleHealthOrigin[ -team]));
+					
+					if (BattleLogic.instance().castleHealth[ -team] <= 0)
+					{
+						BattleLogic.instance().state = BattleLogic.BATTLE_STATE_STOPPED;
+						var str:String = (team == Constants.TEAM_1) ? "Congratulation, you win!!!" : "Sorry, game over!!!";
+						(world.create(FloatingText) as FloatingText).reset(FP.halfWidth, 100, str, 200, 0xFF0000, 36, 30);
+					}
 				}
 			}
 		}

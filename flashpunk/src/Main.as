@@ -4,6 +4,7 @@ package
 	import flash.events.Event;
 	import net.flashpunk.Engine;
 	import net.flashpunk.FP;
+	import org.aswing.AsWingManager;
 	import scene.BattleScene;
 
 	/**
@@ -24,6 +25,7 @@ package
 		override public function init():void 
 		{
 			trace("Engine has started!");
+			AsWingManager.setRoot(FP.engine);
 		}
 
 	}
