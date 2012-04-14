@@ -7,6 +7,7 @@ package scene
 	import flash.geom.Rectangle;
 	import logic.BattleLogic;
 	import logic.soldier.BaseSoldier;
+	import logic.soldier.KnightLance;
 	import logic.soldier.KnightRobo;
 	import net.flashpunk.Entity;
 	import net.flashpunk.FP;
@@ -88,15 +89,28 @@ package scene
 		
 		private function addLogicEngities():void 
 		{
+			var knightLance1:KnightLance = new KnightLance(Constants.TEAM_1, 5, BaseSoldier.ANIM_STAND);
+			if (BattleLogic.instance().addTroop(knightLance1)) add(knightLance1);
+			var knightLance2:KnightLance = new KnightLance(Constants.TEAM_1, 3, BaseSoldier.ANIM_STAND);
+			if (BattleLogic.instance().addTroop(knightLance2)) add(knightLance2);
+			var knightLance3:KnightLance = new KnightLance(Constants.TEAM_2, 21, BaseSoldier.ANIM_STAND);
+			if (BattleLogic.instance().addTroop(knightLance3)) add(knightLance3);
+			var knightLance4:KnightLance = new KnightLance(Constants.TEAM_2, 23, BaseSoldier.ANIM_STAND);
+			if(BattleLogic.instance().addTroop(knightLance4)) add(knightLance4);
+			
 			for (var row:int = 0; row < 6; row++)
 			{
 				for (var col:int = 0; col < 14; col++)
 				{
 					var cell:int = row * 14 + col;
-					if(col > 6)
-						add(new KnightRobo(Constants.TEAM_2, cell, BaseSoldier.ANIM_STAND));
+					var knightRobo:KnightRobo;
+					if (col > 6)
+						knightRobo = new KnightRobo(Constants.TEAM_2, cell, BaseSoldier.ANIM_STAND);
 					else
-						add(new KnightRobo(Constants.TEAM_1, cell, BaseSoldier.ANIM_STAND));
+						knightRobo = new KnightRobo(Constants.TEAM_1, cell, BaseSoldier.ANIM_STAND);
+						
+					if (BattleLogic.instance().addTroop(knightRobo))
+						add(knightRobo);
 				}
 			}
 		}

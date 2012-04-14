@@ -1,6 +1,7 @@
 package logic 
 {
 	import common.Constants;
+	import common.Utils;
 	import logic.soldier.BaseSoldier;
 	import net.flashpunk.utils.Input;
 	import net.flashpunk.utils.Key;
@@ -23,14 +24,7 @@ package logic
 		
 		private function init():void
 		{
-			state = BATTLE_STATE_STOPPED;			
-			troops[Constants.TEAM_1] = new Object();
-			troops[Constants.TEAM_2] = new Object();
-			for (var i:int = 0; i < Constants.CELL_ROW; i++)
-			{
-				troops[Constants.TEAM_1][i] = new Array();
-				troops[Constants.TEAM_2][i] = new Array();
-			}
+			state = BATTLE_STATE_STOPPED;
 		}
 		
 		public static function instance():BattleLogic
@@ -71,27 +65,55 @@ package logic
 			castleHealthOrigin[Constants.TEAM_2] = 1000;
 		}
 		
-		public function addTroop(troop:BaseSoldier):void
+		public function cellAvailable(team:int, row:int, col:int):Boolean
 		{
-			(troops[troop.team][troop.lane] as Array).push(troop);
-		}	
-		
-		public function removeTroop(troop:BaseSoldier):void
-		{
-			var troopList:Array = troops[troop.team][troop.lane] as Array;
-			for (var i:int = 0; i < troopList.length; i++)
+			if (row < 0 || row >= Constants.CELL_ROW) return false;
+			if (col <0 || col >= Constants.CELL_COLUMN) return false;
+			if (team == Constants.TEAM_1 && col >= Constants.CELL_COLUMN / 2) return false;
+			if (team == Constants.TEAM_2 && col < Constants.CELL_COLUMN / 2) return false;
+			
+			for (var c:int = col - Constants.MAX_SOLDIER_SIZE + 1; c < col + Constants.MAX_SOLDIER_SIZE; c++)
 			{
-				if (troopList[i] == troop)
+				for (var r:int = row - Constants.MAX_SOLDIER_SIZE + 1; r < row + Constants.MAX_SOLDIER_SIZE; r++)
 				{
-					troopList.splice(i, i+1);
-					return;
+					var soldier:BaseSoldier = troops[Utils.getCellFrom(r, c)];
+					if (soldier != null)
+					{
+						if (soldier.row <= row && row < soldier.row + soldier.sizeHeight &&
+							soldier.column <= col && col < soldier.column + soldier.sizeWidth)
+							return false;
+					}
 				}
 			}
+			return true;
 		}
 		
-		public function getTroops(team:int, lane:int):Array
+		public function addTroop(troop:BaseSoldier):Boolean
 		{
-			return troops[team][lane] as Array;
+			for (var c:int = troop.column; c < troop.column + troop.sizeWidth; c++)
+			{
+				for (var r:int = troop.row; r < troop.row + troop.sizeHeight; r++)
+				{
+					if (!cellAvailable(troop.team, r, c)) return false;
+				}
+			}
+			troops[troop.cell] = troop;
+			return true;
+		}	
+		
+		public function removeTroop(troop:BaseSoldier):Boolean
+		{
+			if (troops[troop.cell] == troop)
+			{
+				troops[troop.cell] = null;
+				return true;
+			}
+			return false;
+		}
+		
+		public function getTroop(cell:int):BaseSoldier
+		{
+			return troops[cell];
 		}
 	}
 

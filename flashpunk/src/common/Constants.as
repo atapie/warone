@@ -18,6 +18,8 @@ package common
 		public static const CELL_ROW:int = 6;
 		public static const CELL_SIZE:int = 45;
 		
+		public static const MAX_SOLDIER_SIZE:int = 2;
+		
 		public function Constants() 
 		{
 			

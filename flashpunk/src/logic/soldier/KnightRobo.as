@@ -15,26 +15,29 @@ package logic.soldier
 	 */
 	public class KnightRobo extends BaseSoldier 
 	{
-		[Embed(source = "../../../assets/meerkat.png")] private static const KNIGHT_ROBO_SRC:Class;
+		[Embed(source = "../../../assets/dragon_knight.png")] private static const KNIGHT_ROBO_SRC:Class;
 		private static const KNIGHT_ROBO_IMG:BitmapData = FP.getBitmap(KNIGHT_ROBO_SRC);
 		private static const KNIGHT_ROBO_IMG_FLIPPED:BitmapData = Utils.getFlippedBitmap(KNIGHT_ROBO_IMG);
 
 		public function KnightRobo(team:int, cell:int, startAnim:String) 
 		{
 			// Init sprite map
-			var sprKnightRobo:Spritemap = new Spritemap(KNIGHT_ROBO_IMG, 102, 94);
-			sprKnightRobo.add(ANIM_STAND, [0], 1, false);
-			sprKnightRobo.add(ANIM_WALK, [1, 2, 3, 4, 5, 6, 7, 8], 0.4, true);
-			sprKnightRobo.add(ANIM_ATTACK, [33, 34, 35, 36, 37, 38, 39, 40], 0.6, false);
+			var sprKnightRobo:Spritemap = new Spritemap(KNIGHT_ROBO_IMG, 64, 64);
+			sprKnightRobo.add(ANIM_STAND, [4], 1, false);
+			sprKnightRobo.add(ANIM_WALK, [0,1,2,3], 0.4, true);
+			sprKnightRobo.add(ANIM_ATTACK, [4,5,6,7], 0.6, false);
 			if (team == Constants.TEAM_2) sprKnightRobo.setFlipped(true, KNIGHT_ROBO_IMG_FLIPPED);
 			graphic = sprKnightRobo;
 			
 			// Init base info
+			sizeWidth = 1;
+			sizeHeight = 1;
 			health = 100;
 			damage = 25;
 			moveSpeed = 1;						// px per frame
 			attackSpeed = 25;					// 10 frame per hit
-			attackRange = Constants.CELL_SIZE;	// attack range in pixels
+			attackRange = 0;	// attack range in pixels
+			rowAttack = 1;
 			
 			super(team, cell, startAnim);
 		}

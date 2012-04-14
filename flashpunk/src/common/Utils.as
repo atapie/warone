@@ -17,6 +17,11 @@ package common
 			flip.draw(source, FP.matrix);
 			return flip;
 		}
+		
+		public static function getCellFrom(row:int, col:int):int
+		{
+			return row * Constants.CELL_COLUMN + col;
+		}
 	}
 
 }
