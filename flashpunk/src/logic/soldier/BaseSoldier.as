@@ -84,7 +84,7 @@ package logic.soldier
 						world.remove(this);
 						BattleLogic.instance().removeTroop(this);
 						break;
-				}				
+				}
 			}
 		}
 		
@@ -219,8 +219,8 @@ package logic.soldier
 			if (result.length == 0)
 			{
 				if  (
-					(team == Constants.TEAM_1 && (x + attackRange + Constants.CELL_SIZE * sizeWidth) >= (FP.width - 60)) ||
-				 	(team == Constants.TEAM_2 && (x - attackRange - Constants.CELL_SIZE/2) <= 60)
+					(team == Constants.TEAM_1 && (x + attackRange + Constants.CELL_SIZE * sizeWidth - Constants.CELL_SIZE / 2) >= (FP.width - 60)) ||
+				 	(team == Constants.TEAM_2 && (x - attackRange - Constants.CELL_SIZE / 2) <= 60)
 				)
 				{
 					return result;
