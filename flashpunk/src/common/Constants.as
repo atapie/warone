@@ -7,9 +7,10 @@ package common
 	public class Constants 
 	{
 		public static const LAYER_GUI:int = 0;
-		public static const LAYER_GAME:int = 1;
-		public static const LAYER_BG2:int = 2;
-		public static const LAYER_BG1:int = 3;
+		public static const LAYER_MOUSE:int = 100;
+		public static const LAYER_GAME:int = 200;
+		public static const LAYER_BG2:int = 300;
+		public static const LAYER_BG1:int = 400;
 		
 		public static const TEAM_1:int = 1;
 		public static const TEAM_2:int = -1;

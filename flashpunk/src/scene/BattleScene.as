@@ -1,12 +1,18 @@
 package scene 
 {
+	import common.Config;
+	import common.config.SoldierConfig;
 	import common.Constants;
+	import common.Utils;
+	import flash.display.Bitmap;
 	import flash.display.BitmapData;
 	import flash.events.Event;
 	import flash.events.MouseEvent;
+	import flash.geom.Point;
 	import flash.geom.Rectangle;
 	import logic.BattleLogic;
 	import logic.soldier.BaseSoldier;
+	import logic.soldier.BossStrength;
 	import logic.soldier.KnightLance;
 	import logic.soldier.KnightRobo;
 	import net.flashpunk.Entity;
@@ -14,9 +20,13 @@ package scene
 	import net.flashpunk.graphics.Canvas;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.utils.Draw;
+	import net.flashpunk.utils.Input;
 	import net.flashpunk.World;
 	import org.aswing.AbstractButton;
+	import org.aswing.AssetIcon;
+	import org.aswing.event.DragAndDropEvent;
 	import org.aswing.FlowLayout;
+	import org.aswing.Icon;
 	import org.aswing.JButton;
 	import org.aswing.JFrame;
 	import org.aswing.JLabel;
@@ -33,8 +43,12 @@ package scene
 		private var enemyHp:Canvas = null;
 		private var groundGrid:Image = null;
 		
-		// AsWingGUI
-		private var closeDialog:JFrame;
+		// choose soldier by drag & drop action
+		private var choosingSoldierEntity:Entity;
+		private var cellStatusEntity:Entity;
+		private var choosingSoldier:SoldierConfig;
+		private var lastOveringCell:int;
+		private var canPlaceSoldier:Boolean;
 		
 		public function BattleScene() 
 		{
@@ -42,65 +56,195 @@ package scene
 			addHpInfo();
 			addBattleGround();
 			addLogicEngities();
-			//initGUI();
+			initGUI();
+			initChoosingSoldier();
 		}
 		
+		private function initChoosingSoldier():void 
+		{
+			cellStatusEntity = this.addGraphic(null, Constants.LAYER_MOUSE);
+			cellStatusEntity.visible = false;
+			choosingSoldierEntity = this.addGraphic(null, Constants.LAYER_MOUSE);
+			choosingSoldierEntity.visible = false;			
+		}
+		
+		[Embed(source = "../../assets/battle_icon_knightrobo.png")] private static const KNIGHT_ROBO_ICON_SRC:Class;
+		private static const KNIGHT_ROBO_ICON:BitmapData = FP.getBitmap(KNIGHT_ROBO_ICON_SRC);
+		[Embed(source = "../../assets/battle_icon_knightlance.png")] private static const KNIGHT_LANCE_ICON_SRC:Class;
+		private static const KNIGHT_LANCE_ICON:BitmapData = FP.getBitmap(KNIGHT_LANCE_ICON_SRC);
+		[Embed(source = "../../assets/battle_icon_boss_strength.png")] private static const BOSS_STRENGTH_ICON_SRC:Class;
+		private static const BOSS_STRENGTH_ICON:BitmapData = FP.getBitmap(BOSS_STRENGTH_ICON_SRC);
 		private function initGUI():void
 		{			
 			// create components
-			closeDialog = new JFrame(FP.engine, "Close Dialog");
-			var panel:JPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-			var label:JLabel = new JLabel("This is a dialog with one close button only");
-			var button:JButton = new JButton("                   Đóng                   ");
+			var bottomGUI:JFrame = new JFrame(FP.engine);			
 			
 			// size the frame
-			closeDialog.setSizeWH(300, 150);
-			closeDialog.x = FP.halfWidth - closeDialog.width / 2;
-			closeDialog.y = FP.halfHeight - closeDialog.height;
+			bottomGUI.setSizeWH(FP.width, 100);
+			bottomGUI.y = FP.height - bottomGUI.getHeight();
 			
 			// frame config
-			closeDialog.setClosable(false);
-			closeDialog.setDragable(false);
-			closeDialog.setResizable(false);
-			
-			// button config
-			button.addEventListener(MouseEvent.CLICK, onCloseDialog);
-			
-			// add the label and button to the panel
-			panel.appendAll(label, button);
+			bottomGUI.setClosable(false);
+			bottomGUI.setDragable(false);
+			bottomGUI.setResizable(false);
+			bottomGUI.setBackgroundDecorator(null);
 			
 			// add the panel to the frame
-			closeDialog.getContentPane().append(panel);
+			var panel:JPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+			var knightRoboButton:JButton = new JButton("", new AssetIcon(new Bitmap(KNIGHT_ROBO_ICON)));
+			knightRoboButton.name = "knightRoboButton";
+			knightRoboButton.setDragEnabled(true);
+			knightRoboButton.addEventListener(DragAndDropEvent.DRAG_RECOGNIZED, onChooseSoldier);
+			var knightLanceButton:JButton = new JButton("", new AssetIcon(new Bitmap(KNIGHT_LANCE_ICON)));
+			knightLanceButton.name = "knightLanceButton";
+			knightLanceButton.setDragEnabled(true);
+			knightLanceButton.addEventListener(DragAndDropEvent.DRAG_RECOGNIZED, onChooseSoldier);
+			var bossStrengthButton:JButton = new JButton("", new AssetIcon(new Bitmap(BOSS_STRENGTH_ICON)));
+			bossStrengthButton.name = "bossStrengthButton";
+			bossStrengthButton.setDragEnabled(true);
+			bossStrengthButton.addEventListener(DragAndDropEvent.DRAG_RECOGNIZED, onChooseSoldier);
+			panel.appendAll(knightRoboButton, knightLanceButton, bossStrengthButton);
+			bottomGUI.getContentPane().append(panel);
 			
 			// display the frame
-			closeDialog.show();
+			bottomGUI.show();
 		}
 		
-		private function onCloseDialog(e:Event):void 
+		private function onChooseSoldier(e:DragAndDropEvent):void 
 		{
-			closeDialog.hide();
+			if (BattleLogic.instance().state != BattleLogic.BATTLE_STATE_NORMAL) return;
+			BattleLogic.instance().state = BattleLogic.BATTLE_STATE_CHOOSE_SOLDIER;
+			lastOveringCell = -1;
+			canPlaceSoldier = false;
+			switch(e.target.name)
+			{
+				case "knightRoboButton":
+					choosingSoldierEntity.graphic = KnightRobo.DISPLAY_IMG;
+					choosingSoldier = Config.instance().getConfig(BaseSoldier.SOLDIER_KNIGHT_ROBO_ID);
+					break;
+				case "knightLanceButton":
+					choosingSoldierEntity.graphic = KnightLance.DISPLAY_IMG;
+					choosingSoldier = Config.instance().getConfig(BaseSoldier.SOLDIER_KNIGHT_LANCE_ID);
+					break;
+				case "bossStrengthButton":
+					choosingSoldierEntity.graphic = BossStrength.DISPLAY_IMG;
+					choosingSoldier = Config.instance().getConfig(BaseSoldier.SOLDIER_BOSS_STRENGTH_ID);
+					break;					
+				default:
+					break;
+			}
+			(choosingSoldierEntity.graphic as Image).centerOrigin();
+			choosingSoldierEntity.x = mouseX;
+			choosingSoldierEntity.y = mouseY;
+			choosingSoldierEntity.visible = true;
+			
+			cellStatusEntity.graphic = new Canvas(choosingSoldier.sizeWidth * Constants.CELL_SIZE, choosingSoldier.sizeHeight * Constants.CELL_SIZE);
 		}
 		
 		override public function update():void
 		{
 			BattleLogic.instance().update();
-			super.update();			
+			super.update();
+			
+			switch(BattleLogic.instance().state)
+			{
+				case BattleLogic.BATTLE_STATE_CHOOSE_SOLDIER:
+					// Check finish choose soldier
+					if (Input.mouseReleased)
+					{
+						choosingSoldierEntity.visible = false;
+						cellStatusEntity.visible = false;
+						
+						if (canPlaceSoldier)
+						{
+							var soldier:BaseSoldier;
+							switch(choosingSoldier.id)
+							{
+								case BaseSoldier.SOLDIER_KNIGHT_ROBO_ID:
+									soldier = new KnightRobo(Constants.TEAM_1, lastOveringCell, BaseSoldier.ANIM_STAND);
+									break;
+								case BaseSoldier.SOLDIER_KNIGHT_LANCE_ID:
+									soldier = new KnightLance(Constants.TEAM_1, lastOveringCell, BaseSoldier.ANIM_STAND);
+									break;
+								case BaseSoldier.SOLDIER_BOSS_STRENGTH_ID:
+									soldier = new BossStrength(Constants.TEAM_1, lastOveringCell, BaseSoldier.ANIM_STAND);
+									break;
+							}
+							if (BattleLogic.instance().addTroop(soldier))
+							{
+								add(soldier);
+							}
+						}
+						
+						BattleLogic.instance().state = BattleLogic.BATTLE_STATE_NORMAL;
+					}
+					else 
+					{
+						choosingSoldierEntity.x = mouseX;
+						choosingSoldierEntity.y = mouseY;
+						
+						// Detect overing cell
+						var cell:int = Utils.getCellFromPos(mouseX, mouseY);
+						if (cell != lastOveringCell)
+						{
+							lastOveringCell = cell;
+							if (cell == -1) 
+							{
+								cellStatusEntity.visible = false;
+								canPlaceSoldier = false;
+							}
+							else 
+							{
+								var cellStatusCanvas:Canvas = cellStatusEntity.graphic as Canvas;
+								// clear canvas
+								cellStatusCanvas.fill(new Rectangle(0, 0, cellStatusCanvas.width, cellStatusCanvas.height), 0, 0);
+								
+								var row:int = cell / Constants.CELL_COLUMN;
+								var col:int = cell % Constants.CELL_COLUMN;
+								var cellPos:Point = Utils.getPosFrom(row, col);
+								cellStatusEntity.x = cellPos.x - Constants.CELL_SIZE / 2;
+								cellStatusEntity.y = cellPos.y;
+								// Check cell available
+								canPlaceSoldier = true;
+								for (var i:int = 0; i < choosingSoldier.sizeWidth; i++)
+								{
+									for (var j:int = 0; j < choosingSoldier.sizeHeight; j++)
+									{
+										var color:uint = 0x00FF00;
+										if (!BattleLogic.instance().cellAvailable(Constants.TEAM_1, row + j, col + i))
+										{
+											color = 0xFF0000;
+											canPlaceSoldier = false;
+										}
+										cellStatusCanvas.drawRect(new Rectangle(i * Constants.CELL_SIZE, j * Constants.CELL_SIZE, Constants.CELL_SIZE, Constants.CELL_SIZE), color, 0.5);
+									}
+								}
+								cellStatusEntity.visible = true;
+							}							
+						}						
+					}
+					break;
+				default:
+					break;
+			}
 		}
 		
 		private function addLogicEngities():void 
 		{
-			var knightLance1:KnightLance = new KnightLance(Constants.TEAM_1, 5, BaseSoldier.ANIM_STAND);
-			if (BattleLogic.instance().addTroop(knightLance1)) add(knightLance1);
-			var knightLance2:KnightLance = new KnightLance(Constants.TEAM_1, 3, BaseSoldier.ANIM_STAND);
-			if (BattleLogic.instance().addTroop(knightLance2)) add(knightLance2);
-			var knightLance3:KnightLance = new KnightLance(Constants.TEAM_2, 21, BaseSoldier.ANIM_STAND);
-			if (BattleLogic.instance().addTroop(knightLance3)) add(knightLance3);
-			var knightLance4:KnightLance = new KnightLance(Constants.TEAM_2, 23, BaseSoldier.ANIM_STAND);
-			if(BattleLogic.instance().addTroop(knightLance4)) add(knightLance4);
+			//var bossStrength:BossStrength = new BossStrength(Constants.TEAM_1, 5, BaseSoldier.ANIM_STAND);
+			//if (BattleLogic.instance().addTroop(bossStrength)) add(bossStrength);
+			//var knightLance2:KnightLance = new KnightLance(Constants.TEAM_1, 3, BaseSoldier.ANIM_STAND);
+			//if (BattleLogic.instance().addTroop(knightLance2)) add(knightLance2);			
+			//var knightLance1:KnightLance = new KnightLance(Constants.TEAM_1, 5, BaseSoldier.ANIM_STAND);
+			//if (BattleLogic.instance().addTroop(knightLance1)) add(knightLance1);
+			//var knightLance3:KnightLance = new KnightLance(Constants.TEAM_2, 21, BaseSoldier.ANIM_STAND);
+			//if (BattleLogic.instance().addTroop(knightLance3)) add(knightLance3);
+			//var knightLance4:KnightLance = new KnightLance(Constants.TEAM_2, 23, BaseSoldier.ANIM_STAND);
+			//if (BattleLogic.instance().addTroop(knightLance4)) add(knightLance4);
 			
 			for (var row:int = 0; row < 6; row++)
 			{
-				for (var col:int = 0; col < 14; col++)
+				for (var col:int = 7; col < 14; col++)
 				{
 					var cell:int = row * 14 + col;
 					var knightRobo:KnightRobo;

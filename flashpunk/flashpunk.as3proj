@@ -65,6 +65,10 @@
   <library>
     <asset path="assets\avatar.jpg" />
     <asset path="assets\dragon_knight.png" />
+    <asset path="assets\robo_knight.png" />
+    <asset path="assets\battle_icon_boss_strength.png" />
+    <asset path="assets\battle_icon_knightlance.png" />
+    <asset path="assets\battle_icon_knightrobo.png" />
   </library>
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>

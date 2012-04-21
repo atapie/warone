@@ -1,12 +1,15 @@
 package logic.soldier 
 {
+	import common.config.SoldierConfig;
 	import common.Constants;
 	import common.FloatingText;
 	import common.Utils;
+	import flash.display.Bitmap;
 	import flash.geom.Point;
 	import logic.BattleLogic;
 	import net.flashpunk.Entity;
 	import net.flashpunk.FP;
+	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Spritemap;
 	import scene.BattleScene;
 	/**
@@ -15,7 +18,10 @@ package logic.soldier
 	 */
 	public class BaseSoldier extends Entity
 	{
-		public static const START_POINT:Point = new Point(60, 230);
+		public static const SOLDIER_KNIGHT_ROBO_ID:int = 0;
+		public static const SOLDIER_KNIGHT_LANCE_ID:int = 1;
+		public static const SOLDIER_BOSS_STRENGTH_ID:int = 2;
+		
 		public static const ANIM_STAND:String = "stand";
 		public static const ANIM_WALK:String = "walk";
 		public static const ANIM_ATTACK:String = "attack";
@@ -30,16 +36,14 @@ package logic.soldier
 		public var row:int;
 		public var column:int;
 		
-		public var sizeWidth:int;
-		public var sizeHeight:int;
+		public var config:SoldierConfig;
 		public var health:int;
-		public var damage:int;
-		public var moveSpeed:int;
-		public var attackSpeed:int;
-		public var attackRange:int;
-		public var rowAttack:int;
 		
 		private var lastAttack:int;
+		
+		// View related
+		protected var offsetX:int;
+		protected var offsetY:int;
 		
 		public function BaseSoldier(team:int, cell:int, startAnim:String) 
 		{
@@ -51,22 +55,16 @@ package logic.soldier
 			this.column = cell % Constants.CELL_COLUMN;
 			(graphic as Spritemap).play(startAnim);
 			
-			var pos:Point = getPosFromCell();
+			var pos:Point = Utils.getPosFrom(row, column);
 			this.x = pos.x;
 			this.y = pos.y;
 			
-			if (column >= Constants.CELL_COLUMN / 2) graphic.x -= ((graphic as Spritemap).scaledWidth - Constants.CELL_SIZE / 2);
+			if (team == Constants.TEAM_2) graphic.x -= ((graphic as Spritemap).scaledWidth - Constants.CELL_SIZE / 2);
 			else graphic.x -= Constants.CELL_SIZE / 2;
 			graphic.y -= ((graphic as Spritemap).scaledHeight - Constants.CELL_SIZE);
-		}
-		
-		public function getPosFromCell():Point
-		{
-			var result:Point = new Point();
-			result.x = START_POINT.x + column * Constants.CELL_SIZE + Constants.CELL_SIZE / 2;
-			if (column >= Constants.CELL_COLUMN / 2) result.x += 50;
-			result.y = START_POINT.y + row * Constants.CELL_SIZE;
-			return result;
+			graphic.x += offsetX;
+			graphic.y += offsetY;
+			layer = Constants.LAYER_GAME - cell;
 		}
 		
 		override public function update():void
@@ -90,12 +88,12 @@ package logic.soldier
 		
 		private function move():void 
 		{
-			if (BattleLogic.instance().time - lastAttack >= attackSpeed)
+			if (BattleLogic.instance().time - lastAttack >= config.attackSpeed)
 			{
 				if (canMove())
 				{					
-					if (team == Constants.TEAM_1) x += moveSpeed;
-					else x -= moveSpeed;
+					if (team == Constants.TEAM_1) x += config.moveSpeed;
+					else x -= config.moveSpeed;
 					(graphic as Spritemap).play(ANIM_WALK);
 				}
 				else 
@@ -107,7 +105,7 @@ package logic.soldier
 		
 		private function canMove():Boolean
 		{
-			if (BattleLogic.instance().time - lastAttack >= attackSpeed)
+			if (BattleLogic.instance().time - lastAttack >= config.attackSpeed)
 			{
 				var startCol:int = column + 1;
 				var endCol:int = Constants.CELL_COLUMN / 2 - 1;
@@ -120,14 +118,15 @@ package logic.soldier
 				}
 				for (var c:int = startCol; c * direction <= endCol * direction; c += direction)
 				{
-					for (var r:int = row; r < row + sizeHeight; r++)	
+					for (var r:int = row - Constants.MAX_SOLDIER_SIZE + 1; r <= row; r++)	
 					{
+						if (r < 0) continue;
 						var comrade:BaseSoldier = BattleLogic.instance().getTroop(Utils.getCellFrom(r, c));
-						if (comrade == null) continue;
+						if (comrade == null || (comrade.row + comrade.config.sizeHeight - 1) < row) continue;
 						var minDistance:Number;
-						if (team == Constants.TEAM_1) minDistance = Constants.CELL_SIZE * sizeWidth;
-						else minDistance = Constants.CELL_SIZE * comrade.sizeWidth;
-						if (Math.abs(comrade.x - x) < moveSpeed + minDistance)
+						if (team == Constants.TEAM_1) minDistance = Constants.CELL_SIZE * config.sizeWidth;
+						else minDistance = Constants.CELL_SIZE * comrade.config.sizeWidth;
+						if (Math.abs(comrade.x - x) < config.moveSpeed + minDistance)
 						{
 							return false;
 						}
@@ -139,7 +138,7 @@ package logic.soldier
 		
 		private function attack(enemies:Array):void
 		{
-			if (BattleLogic.instance().time - lastAttack >= attackSpeed)
+			if (BattleLogic.instance().time - lastAttack >= config.attackSpeed)
 			{
 				// View
 				(graphic as Spritemap).play(ANIM_ATTACK, true);				
@@ -152,8 +151,8 @@ package logic.soldier
 					for (var i:int = 0; i < enemies.length; i++)
 					{
 						var enemy:BaseSoldier = enemies[i] as BaseSoldier;
-						(world.create(FloatingText) as FloatingText).reset(enemy.x, enemy.y, ( -damage).toString(), 10, 0xFF0000);
-						enemy.health -= damage;
+						(world.create(FloatingText) as FloatingText).reset(enemy.x, enemy.y, ( -config.damage).toString(), 10, 0xFF0000);
+						enemy.health -= config.damage;
 						if (enemy.health <= 0)
 						{
 							enemy.state = STATE_DEAD;
@@ -162,7 +161,7 @@ package logic.soldier
 				}
 				else
 				{
-					BattleLogic.instance().castleHealth[ -team] -= damage;
+					BattleLogic.instance().castleHealth[ -team] -= config.damage;
 					(world as BattleScene).updateHpInfo( -team, (BattleLogic.instance().castleHealth[ -team] * 100 / BattleLogic.instance().castleHealthOrigin[ -team]));
 					
 					if (BattleLogic.instance().castleHealth[ -team] <= 0)
@@ -193,23 +192,22 @@ package logic.soldier
 			var lastTargetX:Number = -1;
 			for (var c:int = startCol; c*direction <= endCol*direction; c+=direction)
 			{
-				for (var r:int = row; r < row + sizeHeight; r++)
+				for (var r:int = row - Constants.MAX_SOLDIER_SIZE + 1; r < row + config.sizeHeight; r++)
 				{
+					if (r < 0) continue;
 					var enemy:BaseSoldier = BattleLogic.instance().getTroop(Utils.getCellFrom(r, c));
-					if (enemy != null)
+					if (enemy == null || (enemy.row + enemy.config.sizeHeight - 1) < row) continue;
+					var distance:Number;
+					if (team == Constants.TEAM_1) distance = Math.abs(enemy.x - x) - Constants.CELL_SIZE * config.sizeWidth;
+					else distance = Math.abs(enemy.x - x) - Constants.CELL_SIZE * enemy.config.sizeWidth;
+					if (distance <= config.attackRange || (lastTargetX >= 0 && Math.abs(enemy.x - lastTargetX) <= Constants.CELL_SIZE))
 					{
-						var distance:Number;
-						if (team == Constants.TEAM_1) distance = Math.abs(enemy.x - x) - Constants.CELL_SIZE * sizeWidth;
-						else distance = Math.abs(enemy.x - x) - Constants.CELL_SIZE * enemy.sizeWidth;
-						if (distance <= attackRange || (lastTargetX >= 0 && Math.abs(enemy.x - lastTargetX) <= Constants.CELL_SIZE))
+						if (targetRow == -1 || r == targetRow)
 						{
-							if (targetRow == -1 || r == targetRow)
-							{
-								targetRow = r;
-								lastTargetX = enemy.x;
-								result.push(enemy);5
-								if (result.length == rowAttack) return result;
-							}
+							targetRow = r;
+							lastTargetX = enemy.x;
+							result.push(enemy);5
+							if (result.length == config.rowAttack) return result;
 						}
 					}
 				}
@@ -219,8 +217,8 @@ package logic.soldier
 			if (result.length == 0)
 			{
 				if  (
-					(team == Constants.TEAM_1 && (x + attackRange + Constants.CELL_SIZE * sizeWidth - Constants.CELL_SIZE / 2) >= (FP.width - 60)) ||
-				 	(team == Constants.TEAM_2 && (x - attackRange - Constants.CELL_SIZE / 2) <= 60)
+					(team == Constants.TEAM_1 && (x + config.attackRange + Constants.CELL_SIZE * config.sizeWidth - Constants.CELL_SIZE / 2) >= (FP.width - 60)) ||
+				 	(team == Constants.TEAM_2 && (x - config.attackRange - Constants.CELL_SIZE / 2) <= 60)
 				)
 				{
 					return result;
@@ -230,5 +228,4 @@ package logic.soldier
 			else return result;
 		}
 	}
-
 }

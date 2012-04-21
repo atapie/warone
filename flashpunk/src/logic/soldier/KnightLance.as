@@ -1,9 +1,12 @@
 package logic.soldier 
 {
+	import common.Config;
 	import common.Constants;
 	import common.Utils;
 	import flash.display.BitmapData;
+	import flash.geom.Rectangle;
 	import net.flashpunk.FP;
+	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Spritemap;
 	/**
 	 * ...
@@ -14,6 +17,7 @@ package logic.soldier
 		[Embed(source = "../../../assets/dragon_knight.png")] private static const KNIGHT_LANCE_SRC:Class;
 		private static const KNIGHT_LANCE_IMG:BitmapData = FP.getBitmap(KNIGHT_LANCE_SRC);
 		private static const KNIGHT_LANCE_IMG_FLIPPED:BitmapData = Utils.getFlippedBitmap(KNIGHT_LANCE_IMG);
+		public static const DISPLAY_IMG:Image = new Image(KNIGHT_LANCE_IMG, new Rectangle(0, 0, 64, 64));
 		
 		public function KnightLance(team:int, cell:int, startAnim:String) 
 		{
@@ -26,14 +30,8 @@ package logic.soldier
 			graphic = sprKnightLance;
 			
 			// Init base info
-			sizeWidth = 2;
-			sizeHeight = 1;
-			health = 200;
-			damage = 40;
-			moveSpeed = 1;						// px per frame
-			attackSpeed = 25;					// frame per hit
-			attackRange = 0;	// attack range in pixels
-			rowAttack = 2;						// number of unit can attack in a row
+			config = Config.instance().getConfig(BaseSoldier.SOLDIER_KNIGHT_LANCE_ID);
+			health = config.baseHealth;
 			
 			super(team, cell, startAnim);
 		}

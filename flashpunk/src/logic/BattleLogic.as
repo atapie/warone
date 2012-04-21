@@ -12,8 +12,10 @@ package logic
 	public class BattleLogic 
 	{
 		private static var _instance:BattleLogic;
-		public static const BATTLE_STATE_STOPPED:int = 0;
-		public static const BATTLE_STATE_STARTED:int = 1;
+		public static const BATTLE_STATE_NORMAL:int = 0;
+		public static const BATTLE_STATE_CHOOSE_SOLDIER:int = 1;
+		public static const BATTLE_STATE_STARTED:int = 2;
+		public static const BATTLE_STATE_STOPPED:int = 3;
 		
 		public var state:int;
 		public var time:int;			// by frames
@@ -24,7 +26,7 @@ package logic
 		
 		private function init():void
 		{
-			state = BATTLE_STATE_STOPPED;
+			state = BATTLE_STATE_NORMAL;
 		}
 		
 		public static function instance():BattleLogic
@@ -41,7 +43,7 @@ package logic
 		{
 			switch(state)
 			{
-				case BATTLE_STATE_STOPPED:
+				case BATTLE_STATE_NORMAL:
 					if (Input.released(Key.ENTER))
 					{
 						reset();
@@ -79,8 +81,8 @@ package logic
 					var soldier:BaseSoldier = troops[Utils.getCellFrom(r, c)];
 					if (soldier != null)
 					{
-						if (soldier.row <= row && row < soldier.row + soldier.sizeHeight &&
-							soldier.column <= col && col < soldier.column + soldier.sizeWidth)
+						if (soldier.row <= row && row < soldier.row + soldier.config.sizeHeight &&
+							soldier.column <= col && col < soldier.column + soldier.config.sizeWidth)
 							return false;
 					}
 				}
@@ -90,9 +92,9 @@ package logic
 		
 		public function addTroop(troop:BaseSoldier):Boolean
 		{
-			for (var c:int = troop.column; c < troop.column + troop.sizeWidth; c++)
+			for (var c:int = troop.column; c < troop.column + troop.config.sizeWidth; c++)
 			{
-				for (var r:int = troop.row; r < troop.row + troop.sizeHeight; r++)
+				for (var r:int = troop.row; r < troop.row + troop.config.sizeHeight; r++)
 				{
 					if (!cellAvailable(troop.team, r, c)) return false;
 				}
